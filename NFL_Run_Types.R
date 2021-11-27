@@ -9,7 +9,7 @@ pbp <- load_pbp(2021)
 
 # Top six rushers through Week 11.
 
-rbs <- c("J.Taylor", "D.Henry", "N.Chubb", "J.Mixon", "D.Cook", "E.Elliott")
+rbs <- c("J.Taylor", "D.Henry", "N.Chubb", "M.Ingram", "J.Mixon", "D.Cook")
 
 master <- pbp %>%
   filter(rush == 1) %>%
@@ -32,8 +32,12 @@ rushes <- within(rushes,
                  rusher_player_name[rusher_player_name == "J.Taylor" &
                                       posteam == "NE"] <- "J.J.Taylor")
 
+# Using case_when() below as I only want to include the NO logo for Mark Ingram on the plot.
+
 rushes_filt <- rushes %>%
   filter(rusher_player_name %in% rbs) %>%
+  mutate(posteam = case_when(posteam == "HOU" ~ "NO",
+                             TRUE ~ as.character(posteam))) %>%
   group_by(rusher_player_name, posteam, run_type) %>%
   summarise(epa = mean(epa))
 
@@ -46,14 +50,14 @@ rushes_henry <- rushes_filt %>%
 rushes_chubb <- rushes_filt %>%
   filter(rusher_player_name == "N.Chubb")
 
+rushes_ingram <- rushes_filt %>%
+  filter(rusher_player_name == "M.Ingram")
+
 rushes_mixon <- rushes_filt %>%
   filter(rusher_player_name == "J.Mixon")
 
 rushes_cook <- rushes_filt %>%
   filter(rusher_player_name == "D.Cook")
-
-rushes_elliott <- rushes_filt %>%
-  filter(rusher_player_name == "E.Elliott")
 
 ### PLOT ###
 
@@ -97,7 +101,17 @@ p3 <- ggplot(rushes %>% filter(rusher_player_name != "N.Chubb"),
   labs(subtitle = "N Chubb") +
   plot_theme
 
-p4 <- ggplot(rushes  %>% filter(rusher_player_name != "J.Mixon"),
+p4 <- ggplot(rushes %>% filter(rusher_player_name != "M.Ingram"),
+             aes(x = run_type, y = epa)) +
+  geom_boxplot(fill = "#013369", color = "#D50A0A", alpha = 0.4,
+               outlier.shape = NA, notch = TRUE, coef = 0) +
+  geom_nfl_logos(rushes_ingram, mapping = aes(x = run_type, y = epa,
+                                               team_abbr = posteam),
+                 width = 0.06) +
+  labs(subtitle = "M Ingram") +
+  plot_theme
+
+p5 <- ggplot(rushes  %>% filter(rusher_player_name != "J.Mixon"),
              aes(x = run_type, y = epa)) +
   geom_boxplot(fill = "#013369", color = "#D50A0A", alpha = 0.4,
                outlier.shape = NA, notch = TRUE, coef = 0) +
@@ -107,24 +121,14 @@ p4 <- ggplot(rushes  %>% filter(rusher_player_name != "J.Mixon"),
   labs(subtitle = "J Mixon") +
   plot_theme
 
-p5 <- ggplot(rushes %>% filter(rusher_player_name != "D.Cook"),
+p6 <- ggplot(rushes %>% filter(rusher_player_name != "D.Cook"),
              aes(x = run_type, y = epa)) +
   geom_boxplot(fill = "#013369", color = "#D50A0A", alpha = 0.4,
                outlier.shape = NA, notch = TRUE, coef = 0) +
   geom_nfl_logos(rushes_cook, mapping = aes(x = run_type, y = epa,
                                              team_abbr = posteam),
                  width = 0.06) +
-  labs(subtitle = "D Cook") +
-  plot_theme
-
-p6 <- ggplot(rushes %>% filter(rusher_player_name != "E.Elliott"),
-             aes(x = run_type, y = epa)) +
-  geom_boxplot(fill = "#013369", color = "#D50A0A", alpha = 0.4,
-               outlier.shape = NA, notch = TRUE, coef = 0) +
-  geom_nfl_logos(rushes_elliott, mapping = aes(x = run_type, y = epa,
-                                             team_abbr = posteam),
-                 width = 0.06) +
-  labs(subtitle = "E Elliott",
+  labs(subtitle = "D Cook",
        caption = "Source data from @nflfastR | Plot by @BenHorsley89 | Inspired by @jacquietran") +
   plot_theme
 
