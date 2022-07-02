@@ -62,26 +62,31 @@ game_locs <- bind_games %>%
          venue_long = case_when(venue == "Croke Park Stadium" ~ -6.22368,
                                TRUE ~ as.numeric(venue_lat))) %>%
   mutate(travel_dist = ( distHaversine(cbind(venue_long, venue_lat),
-                                     cbind(school_long, school_lat)) ) / 1000)
+                                     cbind(school_long, school_lat)) ) /
+           1000) %>%
+  mutate(travel_dist_miles = travel_dist * 0.62137)
 
 travel <- game_locs %>%
   group_by(season, conference, school) %>%
-  summarise(total_dist = sum(travel_dist)) %>%
+  summarise(total_dist = sum(travel_dist),
+            total_dist_miles = sum(travel_dist_miles)) %>%
   filter(total_dist == max(total_dist))
 
 set.seed(70)
 travel$jit <- runif(nrow(travel), -0.15, 0.15)
 
-p <- ggplot(travel, aes(x = season, y = total_dist)) +
+options(scipen = 999)
+
+p <- ggplot(travel, aes(x = season, y = total_dist_miles)) +
   theme_fivethirtyeight() +
   scale_x_continuous(breaks = c(2014:2021)) +
-  scale_y_continuous(limits = c(80000, 160000)) +
+  scale_y_continuous(limits = c(50000, 100000)) +
   geom_cfb_logos(aes(x = season + jit, team = school),
                  width = 0.03, alpha = 0.8) +
   labs(title = "*Which Schools <span style = 'color: red;'>Travel</span> the Furthest by <span style = 'color: red;'>Conference</span>?*",
-       subtitle = "*CFP era | P5 + Independents | distHarvesine method*",
+       subtitle = "*CFP era | P5 + Independents | distHarvesine method | Regular season*",
        x = "Season",
-       y = "Total Distance Travelled (km)",
+       y = "Total Distance Travelled (mi)",
        caption = "**Data:** cfbfastR | **Plot:** @BenHorsley89") +
   theme(plot.title = element_markdown(face = "bold", size = 16, hjust = 0.5),
         plot.subtitle = element_markdown(size = 10, hjust = 0.5),
@@ -98,8 +103,8 @@ get_png <- function(filename) {
 img <- get_png("Logo.png")
 
 p +
-  annotation_custom(img, xmin = 2014, xmax = 2015, ymin = 61000,
-                    ymax = 71000) +
+  annotation_custom(img, xmin = 2014, xmax = 2015, ymin = 36000,
+                    ymax = 46000) +
   coord_cartesian(clip = "off") +
   theme(plot.margin = unit(c(1, 1, 1.4, 1), "lines"))
 
